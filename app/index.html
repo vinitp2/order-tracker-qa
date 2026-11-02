@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Order Tracker</title>
+    <meta name="description" content="A lightweight, responsive order tracking web application built with vanilla HTML, CSS, and JavaScript featuring authentication, order management, status filtering, and localStorage persistence." />
+    <meta property="og:title" content="Order Tracker" />
+    <meta property="og:description" content="A lightweight, responsive order tracking web application built with vanilla HTML, CSS, and JavaScript featuring authentication, order management, status filtering, and localStorage persistence." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <!-- Toast notifications container -->
+    <div id="toast-container" data-testid="toast-container"></div>
+
+    <!-- 1. LOGIN VIEW -->
+    <section id="login-view" class="login-wrapper" data-testid="login-view">
+      <div class="login-card">
+        <div class="login-header">
+          <div class="brand-badge">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+            </svg>
+          </div>
+          <h1>Order Tracker</h1>
+          <p>Sign in to manage and track customer orders</p>
+        </div>
+
+        <!-- Demo credentials hint -->
+        <div class="demo-hint-box">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          <div class="demo-hint-text">
+            <div><strong>Demo Account:</strong> Username: <code>admin</code> | Password: <code>password123</code></div>
+            <button type="button" class="demo-fill-btn" id="fill-demo-btn" data-testid="fill-demo-btn">
+              Auto-fill Credentials
+            </button>
+          </div>
+        </div>
+
+        <!-- Login Error Alert -->
+        <div id="login-error" class="alert-error hidden" data-testid="login-error" role="alert">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          <span id="login-error-message">Invalid username or password. Please try again.</span>
+        </div>
+
+        <!-- Login Form -->
+        <form id="login-form" autocomplete="on">
+          <div class="form-group">
+            <label class="form-label" for="username-input">Username</label>
+            <input 
+              type="text" 
+              id="username-input" 
+              class="form-input" 
+              data-testid="username-input" 
+              placeholder="e.g. admin" 
+              required 
+              autocomplete="username" 
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="password-input">Password</label>
+            <div class="form-input-wrapper">
+              <input 
+                type="password" 
+                id="password-input" 
+                class="form-input" 
+                data-testid="password-input" 
+                placeholder="Enter password" 
+                required 
+                autocomplete="current-password" 
+              />
+              <button 
+                type="button" 
+                id="toggle-password-btn" 
+                class="password-toggle-btn" 
+                data-testid="toggle-password-btn" 
+                title="Show password" 
+                aria-label="Toggle password visibility">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <button type="submit" id="login-btn" class="btn btn-primary btn-block" data-testid="login-btn">
+            Sign In
+          </button>
+        </form>
+      </div>
+    </section>
+
+    <!-- 2. MAIN APP VIEW -->
+    <main id="app-view" class="app-container hidden" data-testid="app-view">
+      <!-- Header -->
+      <header class="app-header">
+        <div class="app-brand">
+          <div class="brand-icon">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+            </svg>
+          </div>
+          <div>
+            <h1 class="brand-title">Order Tracker</h1>
+          </div>
+        </div>
+
+        <div class="header-actions">
+          <div class="user-badge">
+            <span class="user-avatar" id="user-avatar">A</span>
+            <span id="user-display" data-testid="user-display">Admin</span>
+          </div>
+          <button 
+            type="button" 
+            id="reset-data-btn" 
+            class="btn btn-secondary btn-icon-text" 
+            data-testid="reset-data-btn"
+            title="Reset to default sample orders">
+            Reset Demo Data
+          </button>
+          <button 
+            type="button" 
+            id="logout-btn" 
+            class="btn btn-secondary btn-icon-text" 
+            data-testid="logout-btn">
+            Sign Out
+          </button>
+        </div>
+      </header>
+
+      <!-- Metrics Row -->
+      <div class="metrics-grid">
+        <div class="metric-card active" id="card-total" title="Show all orders">
+          <div class="metric-header">
+            <span class="metric-title">Total Orders</span>
+            <span class="metric-dot all"></span>
+          </div>
+          <div class="metric-value" id="total-orders-count" data-testid="total-orders-count">0</div>
+        </div>
+
+        <div class="metric-card" id="card-pending" title="Filter Pending orders">
+          <div class="metric-header">
+            <span class="metric-title">Pending</span>
+            <span class="metric-dot pending"></span>
+          </div>
+          <div class="metric-value" id="pending-orders-count" data-testid="pending-orders-count">0</div>
+        </div>
+
+        <div class="metric-card" id="card-shipped" title="Filter Shipped orders">
+          <div class="metric-header">
+            <span class="metric-title">Shipped</span>
+            <span class="metric-dot shipped"></span>
+          </div>
+          <div class="metric-value" id="shipped-orders-count" data-testid="shipped-orders-count">0</div>
+        </div>
+
+        <div class="metric-card" id="card-delivered" title="Filter Delivered orders">
+          <div class="metric-header">
+            <span class="metric-title">Delivered</span>
+            <span class="metric-dot delivered"></span>
+          </div>
+          <div class="metric-value" id="delivered-orders-count" data-testid="delivered-orders-count">0</div>
+        </div>
+
+        <div class="metric-card" id="card-cancelled" title="Filter Cancelled orders">
+          <div class="metric-header">
+            <span class="metric-title">Cancelled</span>
+            <span class="metric-dot cancelled"></span>
+          </div>
+          <div class="metric-value" id="cancelled-orders-count" data-testid="cancelled-orders-count">0</div>
+        </div>
+      </div>
+
+      <!-- Add Order Form Card (Always visible for easy access & headless testing) -->
+      <section class="add-order-section" aria-labelledby="add-order-title">
+        <div class="add-order-card">
+          <div class="add-order-header">
+            <div class="add-order-header-title">
+              <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+              </svg>
+              <h2 id="add-order-title">Add New Order</h2>
+            </div>
+            <span class="add-order-subtitle">Fill in customer and product details to register a new order</span>
+          </div>
+
+          <!-- Form level error -->
+          <div id="form-error" class="alert-error hidden" data-testid="form-error" role="alert">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <span id="form-error-message">Please correct the highlighted errors before submitting.</span>
+          </div>
+
+          <form id="add-order-form" data-testid="add-order-form" novalidate>
+            <div class="form-row-grid">
+              <!-- Customer Name -->
+              <div class="form-group form-col">
+                <label class="form-label" for="customer-name-input">
+                  Customer Name <span class="required-star">*</span>
+                </label>
+                <input 
+                  type="text" 
+                  id="customer-name-input" 
+                  class="form-input" 
+                  data-testid="customer-name-input" 
+                  placeholder="e.g. Jane Doe" 
+                  required 
+                />
+                <span id="customer-name-error" class="field-error" data-testid="customer-name-error"></span>
+              </div>
+
+              <!-- Item Name -->
+              <div class="form-group form-col">
+                <label class="form-label" for="item-name-input">
+                  Item / Product <span class="required-star">*</span>
+                </label>
+                <input 
+                  type="text" 
+                  id="item-name-input" 
+                  class="form-input" 
+                  data-testid="item-name-input" 
+                  placeholder="e.g. Wireless Ergonomic Mouse" 
+                  required 
+                />
+                <span id="item-name-error" class="field-error" data-testid="item-name-error"></span>
+              </div>
+
+              <!-- Quantity -->
+              <div class="form-group form-col-sm">
+                <label class="form-label" for="quantity-input">
+                  Quantity <span class="required-star">*</span>
+                </label>
+                <input 
+                  type="number" 
+                  id="quantity-input" 
+                  class="form-input" 
+                  data-testid="quantity-input" 
+                  min="1" 
+                  step="1" 
+                  value="1" 
+                  required 
+                />
+                <span id="quantity-error" class="field-error" data-testid="quantity-error"></span>
+              </div>
+
+              <!-- Actions -->
+              <div class="form-group form-col-btn">
+                <button type="submit" id="submit-order-btn" class="btn btn-primary btn-add-order" data-testid="submit-order-btn">
+                  <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+                  </svg>
+                  Create Order
+                </button>
+                <button type="button" id="cancel-form-btn" class="btn btn-secondary" data-testid="cancel-form-btn">
+                  Clear
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- Controls Toolbar (Search & Filter) -->
+      <div class="toolbar-card">
+        <div class="search-filter-group">
+          <!-- Search input -->
+          <div class="search-input-wrapper">
+            <svg class="search-icon" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+            <input 
+              type="text" 
+              id="search-input" 
+              class="search-input" 
+              data-testid="search-input" 
+              placeholder="Search by Order ID (e.g. ORD-1001), Customer, or Item..." 
+              autocomplete="off"
+            />
+          </div>
+
+          <!-- Status filter dropdown -->
+          <div class="filter-dropdown-wrapper">
+            <label for="status-filter" class="filter-label">Status:</label>
+            <select id="status-filter" class="status-select" data-testid="status-filter" aria-label="Filter orders by status">
+              <option value="ALL">All Statuses</option>
+              <option value="PENDING">Pending</option>
+              <option value="SHIPPED">Shipped</option>
+              <option value="DELIVERED">Delivered</option>
+              <option value="CANCELLED">Cancelled</option>
+            </select>
+          </div>
+
+          <!-- Clear filters -->
+          <button type="button" id="clear-filters-btn" class="btn btn-secondary btn-icon-text" data-testid="clear-filters-btn">
+            Clear Filters
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick status filter tabs -->
+      <div class="filter-tabs" role="tablist" aria-label="Status quick filter tabs">
+        <button type="button" class="filter-tab active" data-status="ALL" data-testid="filter-all">All Orders</button>
+        <button type="button" class="filter-tab" data-status="PENDING" data-testid="filter-pending">Pending</button>
+        <button type="button" class="filter-tab" data-status="SHIPPED" data-testid="filter-shipped">Shipped</button>
+        <button type="button" class="filter-tab" data-status="DELIVERED" data-testid="filter-delivered">Delivered</button>
+        <button type="button" class="filter-tab" data-status="CANCELLED" data-testid="filter-cancelled">Cancelled</button>
+      </div>
+
+      <!-- Orders Table -->
+      <div class="table-card">
+        <div class="table-header-info">
+          <h2 class="table-title">Order Records</h2>
+          <span class="table-count-badge" id="table-count-badge">Loading orders...</span>
+        </div>
+
+        <div class="table-responsive">
+          <table class="orders-table" data-testid="orders-table">
+            <thead>
+              <tr>
+                <th>Order ID</th>
+                <th>Customer Name</th>
+                <th>Item</th>
+                <th>Qty</th>
+                <th>Date</th>
+                <th>Status</th>
+                <th style="text-align: right;">Action</th>
+              </tr>
+            </thead>
+            <tbody id="orders-table-body" data-testid="order-list">
+              <!-- Populated dynamically by app.js -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Empty state when no orders match -->
+        <div id="empty-state" class="empty-state hidden" data-testid="empty-state">
+          <svg class="empty-icon" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
+          </svg>
+          <h3>No matching orders found</h3>
+          <p>Try clearing your search query or choosing a different status filter.</p>
+        </div>
+      </div>
+    </main>
+
+    <!-- Application Script (vanilla JS, no framework) -->
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
